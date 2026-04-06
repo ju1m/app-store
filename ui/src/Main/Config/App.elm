@@ -89,6 +89,10 @@ type alias NgiGrantName =
     String
 
 
+type alias NgiSubgrants =
+    List String
+
+
 decodeNgiGrants : Decoder NgiGrants
 decodeNgiGrants =
     Decode.dict (Decode.list Decode.string)
