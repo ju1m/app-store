@@ -34,7 +34,7 @@ view model =
                 , div
                     [ class "d-none d-md-flex align-items-center gap-4" ]
                     [ -- viewPackagesLink
-                      viewRecipeOptionsLink
+                      viewPageRecipeOptionsLink
                     , viewThemeToggle model
                     ]
                 , button
@@ -66,7 +66,7 @@ view model =
                     [ class "card card-body bg-body-tertiary shadow-sm" ]
                     [ ul [ class "nav flex-column gap-2" ]
                         [ -- li [ class "nav-item" ] [ viewPackagesLink ]
-                          li [ class "nav-item" ] [ viewRecipeOptionsLink ]
+                          li [ class "nav-item" ] [ viewPageRecipeOptionsLink ]
                         , li [ class "nav-item mt-2 pt-2 border-top" ] [ viewThemeToggle model ]
                         ]
                     ]
@@ -174,6 +174,7 @@ viewPage model =
 
         Page_RecipeOptions pageRecipeOptions ->
             viewPageRecipeOptions model pageRecipeOptions
+
 
 viewPoweredBy : Model -> Html update
 viewPoweredBy model =

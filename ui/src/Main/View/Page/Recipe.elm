@@ -104,8 +104,8 @@ viewPageRecipeOption _ pageRecipeOptions ( optionName, option ) =
         ]
 
 
-viewRecipeOptionsLink : Html Update
-viewRecipeOptionsLink =
+viewPageRecipeOptionsLink : Html Update
+viewPageRecipeOptionsLink =
     let
         onClickRoute =
             Route_RecipeOptions
