@@ -8,6 +8,8 @@ import Main.Config.Package exposing (..)
 import Main.Error exposing (..)
 import Main.Helpers.Nix exposing (..)
 import Main.Model.Preferences exposing (..)
+import Set exposing (Set)
+import String exposing (join)
 
 
 {-| Description: a route is an address.
@@ -98,28 +100,28 @@ showRoutePackagesFocus x =
 
 
 type alias RouteRecipeOptions =
-    { routeRecipeOptions_search : String
+    { routeRecipeOptions_searchPattern : String
     , routeRecipeOptions_focus : Maybe RouteRecipeOptionsFocus
-    , routeRecipeOptions_pagination : RoutePagination
+    , routeRecipeOptions_unfolds : Set (List NixName)
     }
 
 
 type RouteRecipeOptionsFocus
-    = RouteRecipeOptionsFocus_Option String
+    = RouteRecipeOptionsFocus_Option (List NixName)
 
 
 showRouteRecipeOptionsFocus : RouteRecipeOptionsFocus -> String
 showRouteRecipeOptionsFocus x =
     case x of
         RouteRecipeOptionsFocus_Option s ->
-            s
+            s |> joinNixNames
 
 
 defaultRouteRecipeOptions : RouteRecipeOptions
 defaultRouteRecipeOptions =
-    { routeRecipeOptions_search = ""
+    { routeRecipeOptions_searchPattern = ""
+    , routeRecipeOptions_unfolds = Set.empty
     , routeRecipeOptions_focus = Nothing
-    , routeRecipeOptions_pagination = defaultRoutePagination
     }
 
 
@@ -305,19 +307,24 @@ fromAppUrl url =
         [ "recipe", "options" ] ->
             Ok <|
                 Route_RecipeOptions
-                    { routeRecipeOptions_search =
+                    { routeRecipeOptions_searchPattern =
                         url.queryParameters
                             |> Dict.get "q"
                             |> Maybe.andThen List.head
                             |> Maybe.withDefault ""
-                    , routeRecipeOptions_pagination = url |> appUrlToRoutePagination
+                    , routeRecipeOptions_unfolds =
+                        url.queryParameters
+                            |> Dict.get "unfolds"
+                            |> Maybe.withDefault []
+                            |> List.map splitNixName
+                            |> Set.fromList
                     , routeRecipeOptions_focus =
                         url.fragment
                             |> Maybe.map
                                 (\fragment ->
                                     case fragment of
                                         optionId ->
-                                            RouteRecipeOptionsFocus_Option optionId
+                                            RouteRecipeOptionsFocus_Option (optionId |> splitNixName)
                                 )
                     }
 
@@ -404,23 +411,30 @@ toAppUrl route =
             { path = deployPath ++ [ "recipe", "options" ]
             , queryParameters =
                 [ ( "q"
-                  , case routeRecipe.routeRecipeOptions_search of
+                  , case routeRecipe.routeRecipeOptions_searchPattern of
                         "" ->
                             []
 
                         q ->
                             [ q ]
                   )
+                , ( "unfolds"
+                  , case routeRecipe.routeRecipeOptions_unfolds |> Set.toList of
+                        [] ->
+                            []
+
+                        xs ->
+                            xs |> List.map joinNixNames
+                  )
                 ]
                     |> Dict.fromList
-                    |> Dict.union (routePaginationToQueryParameters routeRecipe.routeRecipeOptions_pagination)
             , fragment =
                 routeRecipe.routeRecipeOptions_focus
                     |> Maybe.map
                         (\focus ->
                             case focus of
                                 RouteRecipeOptionsFocus_Option s ->
-                                    s
+                                    s |> joinNixNames
                         )
             }
 

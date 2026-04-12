@@ -2,6 +2,11 @@ module Main.Helpers.Nix exposing (..)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder, field, string)
+import List.Extra as List
+import Main.Helpers.Tree as Tree
+import String
+import Tree exposing (Tree)
+import Tuple exposing (first, second)
 
 
 type alias NixUrl =
@@ -27,6 +32,21 @@ showGithubRepoSlug url =
 
 type alias NixName =
     String
+
+
+splitNixName : NixName -> List NixName
+splitNixName name =
+    case name of
+        "" ->
+            []
+
+        _ ->
+            name |> String.split "."
+
+
+joinNixNames : List NixName -> NixName
+joinNixNames =
+    String.join "."
 
 
 type alias NixModuleOptions =
@@ -70,3 +90,21 @@ decodeLiteralExpression =
     Decode.map2 NixLiteralExpression
         (field "_type" string)
         (field "text" string)
+
+
+type alias TreeSize =
+    Int
+
+
+nixOptionsTrees : List ( NixName, opt ) -> List (Tree ( NixName, List opt ))
+nixOptionsTrees opts =
+    opts
+        |> List.map
+            (\( n, opt ) ->
+                let
+                    path =
+                        n |> splitNixName
+                in
+                ( path, opt )
+            )
+        |> Tree.unflattenChart

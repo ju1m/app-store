@@ -3,12 +3,14 @@ module Main.Update exposing (..)
 import Browser.Dom as Dom
 import Dict
 import Http
+import List.Extra as List
 import Main.Config exposing (..)
 import Main.Config.App exposing (..)
 import Main.Error exposing (..)
 import Main.Helpers.Cmd as Cmd
-import Main.Helpers.List as List
+import Main.Helpers.List as List exposing (longestCommonPrefix)
 import Main.Helpers.Nix exposing (..)
+import Main.Helpers.Tree as Tree
 import Main.Model exposing (..)
 import Main.Model.Page exposing (..)
 import Main.Model.Preferences exposing (..)
@@ -17,7 +19,11 @@ import Main.Ports.Navigation
 import Main.Ports.SmoothScroll exposing (..)
 import Main.Route as Route exposing (..)
 import Navigation
+import Set exposing (Set)
+import SyntaxHighlight exposing (nix)
 import Task
+import Tree
+import Tuple exposing (first)
 
 
 type alias Updater =
@@ -431,57 +437,75 @@ updateRoute route =
                 updateRecipeOptions <|
                     \model ->
                         let
-                            search =
-                                routeRecipe.routeRecipeOptions_search |> String.toLower
+                            searchPattern =
+                                routeRecipe.routeRecipeOptions_searchPattern |> String.toLower
 
-                            filterMatches =
-                                List.filter
-                                    (\( name, option ) ->
-                                        let
-                                            -- Case Insensitive search
-                                            option_name =
-                                                String.toLower name
+                            filterOption ( name, option ) =
+                                let
+                                    -- Case Insensitive searchPattern
+                                    option_name =
+                                        String.toLower name
 
-                                            option_description =
-                                                String.toLower option.nixModuleOption_description
+                                    option_description =
+                                        String.toLower option.nixModuleOption_description
 
-                                            name_matches =
-                                                String.contains search option_name
+                                    name_matches =
+                                        String.contains searchPattern option_name
 
-                                            desc_matches =
-                                                String.contains search option_description
-                                        in
-                                        name_matches || desc_matches
-                                    )
+                                    desc_matches =
+                                        String.contains searchPattern option_description
+                                in
+                                name_matches
 
                             availableItems =
-                                getAvailableItems
-                                    model.model_page
-                                    (\page ->
-                                        case page of
-                                            Page_RecipeOptions pageRecipe ->
-                                                Just ( pageRecipe.pageRecipeOptions_route.routeRecipeOptions_search, pageRecipe.pageRecipeOptions_pagination.pagePagination_list )
-
-                                            _ ->
-                                                Nothing
-                                    )
-                                    (model.model_RecipeOptions.recipeOptions_available |> Dict.toList)
-                                    search
+                                case model.model_page of
+                                    -- Page_RecipeOptions pageRecipe ->
+                                    --     if
+                                    --         String.contains pageRecipe.pageRecipeOptions_route.routeRecipeOptions_searchPattern searchPattern
+                                    --             && List.isPrefixOf pageRecipe.pageRecipeOptions_ancestors routeRecipe.routeRecipeOptions_searchPath
+                                    --     then
+                                    --         pageRecipe.pageRecipeOptions_pagination.pagePagination_list
+                                    --             |> List.concat
+                                    --
+                                    --     else
+                                    --         model.model_RecipeOptions.recipeOptions_available
+                                    --             |> Dict.toList
+                                    _ ->
+                                        model.model_RecipeOptions.recipeOptions_available
+                                            |> Dict.toList
 
                             filteredItems =
                                 availableItems
-                                    |> filterMatches
+                                    |> List.filter filterOption
                         in
                         { model
                             | model_page =
                                 Page_RecipeOptions
                                     { pageRecipeOptions_route = routeRecipe
-                                    , pageRecipeOptions_pagination =
-                                        defaultPagePagination
-                                            routeRecipe.routeRecipeOptions_pagination
-                                            filteredItems
+                                    , pageRecipeOptions_unfolds =
+                                        (if routeRecipe.routeRecipeOptions_searchPattern /= "" then
+                                            filteredItems |> List.map (first >> splitNixName) |> Set.fromList
+
+                                         else
+                                            Set.empty
+                                        )
+                                            |> Set.union routeRecipe.routeRecipeOptions_unfolds
+                                            |> Set.insert []
+                                    , pageRecipeOptions_trees =
+                                        availableItems
+                                            |> nixOptionsTrees
+                                            |> List.map
+                                                (Tree.ancestorsTree
+                                                    >> Tree.map
+                                                        (\( ancestors, ( name, values ) ) ->
+                                                            { recipeOptionNode_ancestors = ancestors
+                                                            , recipeOptionNode_name = name
+                                                            , recipeOptionNode_values = values
+                                                            }
+                                                        )
+                                                )
                                     }
-                            , model_search = routeRecipe.routeRecipeOptions_search
+                            , model_search = routeRecipe.routeRecipeOptions_searchPattern
                         }
                             |> updateFocus
                                 showRouteRecipeOptionsFocus
@@ -558,14 +582,11 @@ routeSearch model search =
             let
                 routeRecipeOptions =
                     pageRecipeOptions.pageRecipeOptions_route
-
-                routePagination =
-                    routeRecipeOptions.routeRecipeOptions_pagination
             in
             Route_RecipeOptions
                 { routeRecipeOptions
-                    | routeRecipeOptions_search = search
-                    , routeRecipeOptions_pagination = { routePagination | routePagination_current = Nothing }
+                    | routeRecipeOptions_searchPattern = search
+                    , routeRecipeOptions_unfolds = Set.empty
                 }
 
 
