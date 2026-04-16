@@ -23,7 +23,7 @@ import Set exposing (Set)
 import SyntaxHighlight exposing (nix)
 import Task
 import Tree
-import Tuple exposing (first)
+import Tuple exposing (first, second)
 
 
 type alias Updater =
@@ -433,90 +433,85 @@ updateRoute route =
                             routePackages.routePackages_focus
 
         Route_RecipeOptions routeRecipe ->
-            updateConfig <|
-                updateRecipeOptions <|
-                    \model ->
-                        let
-                            searchPattern =
-                                routeRecipe.routeRecipeOptions_searchPattern |> String.toLower
+            updateRecipeOptions <|
+                \model ->
+                    let
+                        searchPattern =
+                            routeRecipe.routeRecipeOptions_searchPattern |> String.toLower
 
-                            filterOption ( name, option ) =
-                                let
-                                    -- Case Insensitive searchPattern
-                                    option_name =
-                                        String.toLower name
+                        filterOption name option =
+                            let
+                                -- Case Insensitive searchPattern
+                                option_name =
+                                    String.toLower name
 
-                                    option_description =
-                                        String.toLower option.nixModuleOption_description
+                                option_description =
+                                    String.toLower option.nixModuleOption_description
 
-                                    name_matches =
-                                        String.contains searchPattern option_name
+                                name_matches =
+                                    String.contains searchPattern option_name
 
-                                    desc_matches =
-                                        String.contains searchPattern option_description
-                                in
-                                name_matches
+                                desc_matches =
+                                    String.contains searchPattern option_description
+                            in
+                            name_matches
 
-                            availableItems =
-                                case model.model_page of
-                                    -- Page_RecipeOptions pageRecipe ->
-                                    --     if
-                                    --         String.contains pageRecipe.pageRecipeOptions_route.routeRecipeOptions_searchPattern searchPattern
-                                    --             && List.isPrefixOf pageRecipe.pageRecipeOptions_ancestors routeRecipe.routeRecipeOptions_searchPath
-                                    --     then
-                                    --         pageRecipe.pageRecipeOptions_pagination.pagePagination_list
-                                    --             |> List.concat
-                                    --
-                                    --     else
-                                    --         model.model_RecipeOptions.recipeOptions_available
-                                    --             |> Dict.toList
-                                    _ ->
-                                        model.model_RecipeOptions.recipeOptions_available
-                                            |> Dict.toList
+                        availableItems =
+                            case model.model_page of
+                                -- Page_RecipeOptions pageRecipe ->
+                                --     if
+                                --         String.contains pageRecipe.pageRecipeOptions_route.routeRecipeOptions_searchPattern searchPattern
+                                --             && List.isPrefixOf pageRecipe.pageRecipeOptions_ancestors routeRecipe.routeRecipeOptions_searchPath
+                                --     then
+                                --         pageRecipe.pageRecipeOptions_pagination.pagePagination_list
+                                --             |> List.concat
+                                --
+                                --     else
+                                --         model.model_RecipeOptions.recipeOptions_available
+                                --             |> Dict.toList
+                                _ ->
+                                    model.model_RecipeOptions.recipeOptions_available
+                                        |> Dict.toList
+                    in
+                    { model
+                        | model_page =
+                            let
+                                trees =
+                                    availableItems
+                                        |> nixOptionsTrees
+                            in
+                            Page_RecipeOptions
+                                { pageRecipeOptions_route = routeRecipe
+                                , pageRecipeOptions_scope =
+                                    trees
+                                        |> Tree.lookupSubTrees first routeRecipe.routeRecipeOptions_scope
+                                        |> List.map
+                                            (Tree.map
+                                                (\( n, vs ) ->
+                                                    if vs |> List.any (filterOption n) then
+                                                        NodeNixOptionFiltered_In ( n, vs )
 
-                            filteredItems =
-                                availableItems
-                                    |> List.filter filterOption
-                        in
-                        { model
-                            | model_page =
-                                Page_RecipeOptions
-                                    { pageRecipeOptions_route = routeRecipe
-                                    , pageRecipeOptions_unfolds =
-                                        (if routeRecipe.routeRecipeOptions_searchPattern /= "" then
-                                            filteredItems |> List.map (first >> splitNixName) |> Set.fromList
-
-                                         else
-                                            Set.empty
-                                        )
-                                            |> Set.union routeRecipe.routeRecipeOptions_unfolds
-                                            |> Set.insert []
-                                    , pageRecipeOptions_trees =
-                                        availableItems
-                                            |> nixOptionsTrees
-                                            |> List.map
-                                                (Tree.ancestorsTree
-                                                    >> Tree.map
-                                                        (\( ancestors, ( name, values ) ) ->
-                                                            { recipeOptionNode_ancestors = ancestors
-                                                            , recipeOptionNode_name = name
-                                                            , recipeOptionNode_values = values
-                                                            }
-                                                        )
+                                                    else
+                                                        NodeNixOptionFiltered_Out n
                                                 )
-                                    }
-                            , model_search = routeRecipe.routeRecipeOptions_searchPattern
-                        }
-                            |> updateFocus
-                                showRouteRecipeOptionsFocus
-                                (case model.model_page of
-                                    Page_RecipeOptions oldPageRecipe ->
-                                        oldPageRecipe.pageRecipeOptions_route.routeRecipeOptions_focus
+                                            )
+                                , pageRecipeOptions_unfolds =
+                                    routeRecipe.routeRecipeOptions_unfolds
+                                        |> Set.insert []
+                                , pageRecipeOptions_trees = trees
+                                }
+                        , model_search = routeRecipe.routeRecipeOptions_searchPattern
+                    }
+                        |> updateFocus
+                            showRouteRecipeOptionsFocus
+                            (case model.model_page of
+                                Page_RecipeOptions oldPageRecipe ->
+                                    oldPageRecipe.pageRecipeOptions_route.routeRecipeOptions_focus
 
-                                    _ ->
-                                        Nothing
-                                )
-                                routeRecipe.routeRecipeOptions_focus
+                                _ ->
+                                    Nothing
+                            )
+                            routeRecipe.routeRecipeOptions_focus
 
 
 {-| `updateConfig up` populates `model_config` if empty, then runs `up`.

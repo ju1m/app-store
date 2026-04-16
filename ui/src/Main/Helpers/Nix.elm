@@ -3,6 +3,7 @@ module Main.Helpers.Nix exposing (..)
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder, field, string)
 import List.Extra as List
+import Main.Helpers.List as List
 import Main.Helpers.Tree as Tree
 import String
 import Tree exposing (Tree)
@@ -34,7 +35,11 @@ type alias NixName =
     String
 
 
-splitNixName : NixName -> List NixName
+type alias NixPath =
+    List String
+
+
+splitNixName : NixName -> NixPath
 splitNixName name =
     case name of
         "" ->
@@ -44,8 +49,8 @@ splitNixName name =
             name |> String.split "."
 
 
-joinNixNames : List NixName -> NixName
-joinNixNames =
+joinNixPath : NixPath -> NixName
+joinNixPath =
     String.join "."
 
 
@@ -96,7 +101,7 @@ type alias TreeSize =
     Int
 
 
-nixOptionsTrees : List ( NixName, opt ) -> List (Tree ( NixName, List opt ))
+nixOptionsTrees : List.Assoc NixName opt -> Tree.Trees ( NixName, List opt )
 nixOptionsTrees opts =
     opts
         |> List.map

@@ -91,8 +91,24 @@ longestCommonPrefix l =
                 |> Maybe.withDefault []
 
 
+dropLast : List a -> Maybe (List a)
+dropLast =
+    List.reverse >> List.tail >> Maybe.map List.reverse
+
+
 type alias Assoc key value =
     List ( key, value )
+
+
+lookupAssoc : key -> Assoc key value -> List value
+lookupAssoc key =
+    List.filterMap <|
+        \( k, x ) ->
+            if k == key then
+                Just x
+
+            else
+                Nothing
 
 
 type alias Group key value =

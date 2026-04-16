@@ -102,25 +102,27 @@ showRoutePackagesFocus x =
 type alias RouteRecipeOptions =
     { routeRecipeOptions_searchPattern : String
     , routeRecipeOptions_focus : Maybe RouteRecipeOptionsFocus
-    , routeRecipeOptions_unfolds : Set (List NixName)
+    , routeRecipeOptions_scope : NixPath
+    , routeRecipeOptions_unfolds : Set NixPath
     }
 
 
 type RouteRecipeOptionsFocus
-    = RouteRecipeOptionsFocus_Option (List NixName)
+    = RouteRecipeOptionsFocus_Option NixPath
 
 
 showRouteRecipeOptionsFocus : RouteRecipeOptionsFocus -> String
 showRouteRecipeOptionsFocus x =
     case x of
         RouteRecipeOptionsFocus_Option s ->
-            s |> joinNixNames
+            s |> joinNixPath
 
 
 defaultRouteRecipeOptions : RouteRecipeOptions
 defaultRouteRecipeOptions =
     { routeRecipeOptions_searchPattern = ""
     , routeRecipeOptions_unfolds = Set.empty
+    , routeRecipeOptions_scope = []
     , routeRecipeOptions_focus = Nothing
     }
 
@@ -306,18 +308,28 @@ fromAppUrl url =
 
         [ "recipe", "options" ] ->
             Ok <|
+                let
+                    scope =
+                        url.queryParameters
+                            |> Dict.get "scope"
+                            |> Maybe.andThen List.head
+                            |> Maybe.withDefault ""
+                            |> splitNixName
+                in
                 Route_RecipeOptions
                     { routeRecipeOptions_searchPattern =
                         url.queryParameters
                             |> Dict.get "q"
                             |> Maybe.andThen List.head
                             |> Maybe.withDefault ""
+                    , routeRecipeOptions_scope = scope
                     , routeRecipeOptions_unfolds =
                         url.queryParameters
                             |> Dict.get "unfolds"
                             |> Maybe.withDefault []
                             |> List.map splitNixName
                             |> Set.fromList
+                            |> Set.insert scope
                     , routeRecipeOptions_focus =
                         url.fragment
                             |> Maybe.map
@@ -418,13 +430,21 @@ toAppUrl route =
                         q ->
                             [ q ]
                   )
-                , ( "unfolds"
-                  , case routeRecipe.routeRecipeOptions_unfolds |> Set.toList of
+                , ( "scope"
+                  , case routeRecipe.routeRecipeOptions_scope of
                         [] ->
                             []
 
                         xs ->
-                            xs |> List.map joinNixNames
+                            [ xs |> joinNixPath ]
+                  )
+                , ( "unfolds"
+                  , case routeRecipe.routeRecipeOptions_unfolds |> Set.remove [] |> Set.toList of
+                        [] ->
+                            []
+
+                        xs ->
+                            xs |> List.map joinNixPath
                   )
                 ]
                     |> Dict.fromList
@@ -434,7 +454,7 @@ toAppUrl route =
                         (\focus ->
                             case focus of
                                 RouteRecipeOptionsFocus_Option s ->
-                                    s |> joinNixNames
+                                    s |> joinNixPath
                         )
             }
 
