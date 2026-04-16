@@ -56,6 +56,10 @@ body {
   font-size: 0.9em;
 }
 
+.markdown-content :last-child {
+  margin-bottom:0;
+}
+
 .button {
   display: inline-block;
   padding: 0.1em 0.4em;
