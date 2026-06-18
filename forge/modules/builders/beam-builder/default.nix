@@ -7,7 +7,7 @@
 }:
 let
   builder = config.build.beamMixReleaseBuilder;
-  beamPackages = pkgs.beam.packages."erlang_${builder.erlangVersion}".extend (
+  beamPackages = pkgs.beam.packages."erlang_${builder.erlangVersion}".overrideScope (
     finalBeam: previousBeam: {
       elixir = finalBeam."elixir_${builder.elixirVersion}";
     }
@@ -18,8 +18,6 @@ in
     (packageBuilderModule {
       name = "beamMixReleaseBuilder";
       imports = ./options.nix;
-      # ToDo(compatibility): `mixRelease` is not yet implemented with `lib.extendMkDerivation` as of nixpkgs-26.05
-      mkDerivationProvidesFinalAttrs = false;
       mkDerivation = beamPackages.mixRelease;
       attrs =
         builder: finalAttrs: previousAttrs:
