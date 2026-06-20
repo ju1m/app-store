@@ -31,11 +31,6 @@
           "--with-base-dir=/var/cache/rpki-client"
           "--with-output-dir=/var/db/rpki-client"
         ];
-        preConfigure = ''
-          cp -r $openbsdSrc openbsd
-          chmod -R +w openbsd
-          ./autogen.sh
-        '';
       };
       standardBuilder = {
         enable = true;
@@ -52,6 +47,14 @@
           pkgs.zlib
         ];
       };
+    };
+
+    phases = {
+      configure.script.pre = ''
+        cp -r $openbsdSrc openbsd
+        chmod -R +w openbsd
+        ./autogen.sh
+      '';
     };
 
     test.script = ''
