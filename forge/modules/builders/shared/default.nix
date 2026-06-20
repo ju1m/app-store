@@ -18,11 +18,9 @@
         lib,
         ...
       }@args:
-
       let
         builder = config.build.${name};
       in
-
       {
         options.build = lib.mkOption {
           type = lib.types.submoduleWith {
@@ -91,6 +89,7 @@
               mkSharedAttrs =
                 finalAttrs:
                 config.build.structuredAttrs
+                // config.result.derivationAttrs
                 // {
                   inherit (config)
                     pname

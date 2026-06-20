@@ -64,6 +64,9 @@ in
         ];
       };
     };
+    build.phases = {
+      check.enable = false;
+    };
   };
 
   pkgs.qpack = {
@@ -82,6 +85,10 @@ in
         faraday
         psq
       ];
+    };
+
+    build.phases = {
+      check.enable = false;
     };
   };
 
@@ -104,6 +111,10 @@ in
         pkgs.qpack
         pkgs.quic
       ];
+    };
+
+    build.phases = {
+      check.enable = true;
     };
   };
 
