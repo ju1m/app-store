@@ -107,10 +107,6 @@
 
                   src = import ./src.nix args;
 
-                  inherit (config.source)
-                    patches
-                    ;
-
                   __structuredAttrs = true;
                   inherit (config.build) env;
 
