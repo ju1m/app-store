@@ -29,14 +29,16 @@
         pkgs.onetbb
         pkgs.pkg-config
         pkgs.python3
-        pkgs.spdlog
         pkgs.zlib
       ];
       packages.run = [
+        pkgs.flex
+        pkgs.boost
         pkgs.capnproto
         pkgs.onetbb
         pkgs.python3
         pkgs.zlib
+        pkgs.spdlog
       ];
       packages.check = [
         pkgs.ctestCheckHook
