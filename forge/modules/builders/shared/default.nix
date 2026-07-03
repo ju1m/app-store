@@ -15,7 +15,6 @@
       {
         config,
         pkgs,
-        forge-lib,
         lib,
         forge-lib,
         ...
@@ -27,6 +26,42 @@
         options.build = lib.mkOption {
           type = lib.types.submoduleWith {
             modules = [
+              (
+                buildArgs:
+                forge-lib.mkAliasOptionModule {
+                  condition = buildArgs.config.${name}.enable;
+                  from = [
+                    name
+                    "packages"
+                    "build"
+                  ];
+                  to = [
+                    "phases"
+                    "build"
+                    "packages"
+                    "build"
+                    "host"
+                  ];
+                } buildArgs
+              )
+              (
+                buildArgs:
+                forge-lib.mkAliasOptionModule {
+                  condition = buildArgs.config.${name}.enable;
+                  from = [
+                    name
+                    "packages"
+                    "run"
+                  ];
+                  to = [
+                    "phases"
+                    "build"
+                    "packages"
+                    "host"
+                    "target"
+                  ];
+                } buildArgs
+              )
               (
                 buildArgs:
                 forge-lib.mkAliasOptionModule {
@@ -56,32 +91,6 @@
                       imports
                       ./env.nix
                       ./structuredAttrs.nix
-                      {
-                        options.packages = {
-                          build = lib.mkOption {
-                            type = lib.types.listOf lib.types.package;
-                            default = [ ];
-                            description = ''
-                              List of build-time dependencies needed during compilation (native
-                              architecture).
-
-                              Mapped to `nativeBuildInputs`.
-                            '';
-                            example = lib.literalExpression "[ pkgs.cmake pkgs.pkg-config pkgs.ninja ]";
-                          };
-                          run = lib.mkOption {
-                            type = lib.types.listOf lib.types.package;
-                            default = [ ];
-                            description = ''
-                              List of runtime dependencies needed by the package (target
-                              architecture).
-
-                              Mapped to `buildInputs`.
-                            '';
-                            example = lib.literalExpression "[ pkgs.openssl pkgs.sqlite pkgs.zlib ]";
-                          };
-                        };
-                      }
                     ];
                   };
                 };
@@ -110,9 +119,6 @@
 
                   __structuredAttrs = true;
                   inherit (config.build) env;
-
-                  nativeBuildInputs = builder.packages.build;
-                  buildInputs = builder.packages.run;
 
                   passthru = {
                     test = config.test.derivation { inherit pkgs finalAttrs; };
