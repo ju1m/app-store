@@ -15,6 +15,7 @@
       {
         config,
         pkgs,
+        forge-lib,
         lib,
         ...
       }@args:
