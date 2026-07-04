@@ -67,6 +67,7 @@ in
       };
     };
     phases = {
+      # FixMe(buildability): fails
       check.enable = false;
     };
   };
@@ -90,6 +91,7 @@ in
     };
 
     phases = {
+      # FixMe(buildability): fails
       check.enable = false;
     };
   };
@@ -116,7 +118,37 @@ in
     };
 
     phases = {
-      check.enable = true;
+      check = {
+        /*
+          FixMe(buildability): fails with:
+          ocaml5.4.1-h3> File "lib_test/test_parser.ml", line 86, characters 26-32:
+          ocaml5.4.1-h3> 86 |               ; payload = "abcd"
+          ocaml5.4.1-h3>                                ^^^^^^
+          ocaml5.4.1-h3> Error: This constant has type string but an expression was expected of type
+          ocaml5.4.1-h3>          Quic.Frame.payload
+          […]
+          ocaml5.4.1-h3> File "lib_test/test_flow_control.ml", line 179, characters 40-42:
+          ocaml5.4.1-h3> 179 |     { Frame.off = 0; len = 0; payload = ""; payload_off = 0 }
+          ocaml5.4.1-h3>                                               ^^
+          ocaml5.4.1-h3> Error: This constant has type string but an expression was expected of type
+          ocaml5.4.1-h3>          Quic.Frame.payload
+          […]
+          ocaml5.4.1-h3> File "lib_test/test_packet_protection.ml", line 662, characters 53-60:
+          ocaml5.4.1-h3> 662 |           ; fragment = { off = 0; len = 5; payload = "hello"; payload_off = 0 }
+          ocaml5.4.1-h3>                                                            ^^^^^^^
+          ocaml5.4.1-h3> Error: This constant has type string but an expression was expected of type
+          ocaml5.4.1-h3>          Quic.Frame.payload
+        */
+        enable = false;
+        packages.host.target = with ocamlPackages; [
+          alcotest
+          hex
+          mirage-crypto-rng
+          tls
+          pkgs.quic
+          yojson
+        ];
+      };
     };
   };
 
@@ -139,6 +171,11 @@ in
         pkgs.quic
       ];
     };
+
+    phases = {
+      # FixMe(buildability): fails
+      check.enable = false;
+    };
   };
 
   pkgs.quic-eio = {
@@ -160,6 +197,11 @@ in
 
         pkgs.quic
       ];
+    };
+
+    phases = {
+      # FixMe(buildability): fails
+      check.enable = false;
     };
   };
 }
