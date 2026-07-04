@@ -16,6 +16,7 @@
         config,
         pkgs,
         lib,
+        forge-lib,
         ...
       }@args:
       let
@@ -25,6 +26,24 @@
         options.build = lib.mkOption {
           type = lib.types.submoduleWith {
             modules = [
+              (
+                buildArgs:
+                forge-lib.mkAliasOptionModule {
+                  condition = buildArgs.config.${name}.enable;
+                  from = [
+                    name
+                    "packages"
+                    "check"
+                  ];
+                  to = [
+                    "phases"
+                    "check"
+                    "packages"
+                    "build"
+                    "host"
+                  ];
+                } buildArgs
+              )
               ./env.nix
               ./structuredAttrs.nix
               ({ specialArgs, config, ... }: {
@@ -59,16 +78,6 @@
                               Mapped to `buildInputs`.
                             '';
                             example = lib.literalExpression "[ pkgs.openssl pkgs.sqlite pkgs.zlib ]";
-                          };
-                          check = lib.mkOption {
-                            type = lib.types.listOf lib.types.package;
-                            default = [ ];
-                            description = ''
-                              List of test dependencies needed to run the test suite.
-
-                              Mapped to `nativeCheckInputs`.
-                            '';
-                            example = lib.literalExpression "[ pkgs.cunit ]";
                           };
                         };
                       }
@@ -107,7 +116,6 @@
 
                   nativeBuildInputs = builder.packages.build;
                   buildInputs = builder.packages.run;
-                  nativeCheckInputs = builder.packages.check;
 
                   passthru = {
                     test = config.test.derivation { inherit pkgs finalAttrs; };

@@ -39,7 +39,6 @@
         packages.run = [
           pkgs.expat
           pkgs.libressl
-          pkgs.rsync
           pkgs.zlib
         ];
       };
@@ -50,6 +49,9 @@
           chmod -R +w openbsd
           ./autogen.sh
         '';
+        check.packages.build.host = [
+          pkgs.rsync
+        ];
         configure.flags = [
           "--with-base-dir=/var/cache/rpki-client"
           "--with-output-dir=/var/db/rpki-client"
