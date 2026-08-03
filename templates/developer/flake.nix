@@ -24,6 +24,7 @@
         {
           system,
           pkgs,
+          config,
           ...
         }:
         {
@@ -33,10 +34,10 @@
             #   This does not include the tools themselves.
             #   For that, use `packages`, below.
             inputsFrom = [
-              ngi-forge.packages.${system}.apps.cpdf
-              ngi-forge.packages.${system}.apps.qlever
+              config.packages.apps.cpdf
+              config.packages.apps.qlever
               # TODO: https://github.com/ngi-nix/forge/issues/772
-              ngi-forge.packages.${system}.pkgs.arwen
+              config.packages.pkgs.arwen
             ];
 
             # Install build tools
