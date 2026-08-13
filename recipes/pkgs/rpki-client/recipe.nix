@@ -24,10 +24,6 @@
           rev = "027566b8e6827a9e280a0ef067464fc2336f0179";
           hash = "sha256-lmyECC4uhBLJb89Gm+oqO4ClkkhFGqGm+cD7GivDqok=";
         };
-        configureFlags = [
-          "--with-base-dir=/var/cache/rpki-client"
-          "--with-output-dir=/var/db/rpki-client"
-        ];
       };
       standardBuilder = {
         enable = true;
@@ -52,6 +48,10 @@
         chmod -R +w openbsd
         ./autogen.sh
       '';
+      configure.flags = [
+        "--with-base-dir=/var/cache/rpki-client"
+        "--with-output-dir=/var/db/rpki-client"
+      ];
     };
 
     # Warning(reproducibility): `tests.script` being run in a fixed-output derivation,
