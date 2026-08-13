@@ -27,10 +27,6 @@
           rev = "65b0882149d7c1a22208b0415b9ece507d8f9522";
           hash = "sha256-SVAe68oVTuQHcVD+KbbRPm0wNrrV4kc8VG20a1BUZ1w=";
         };
-        configureFlags = [
-          "--with-base-dir=/var/cache/rpki-client"
-          "--with-output-dir=/var/db/rpki-client"
-        ];
       };
       standardBuilder = {
         enable = true;
@@ -47,7 +43,6 @@
           pkgs.zlib
         ];
       };
-    };
 
       phases = {
         configure.script.pre = ''
