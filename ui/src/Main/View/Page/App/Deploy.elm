@@ -101,6 +101,7 @@ viewPageAppDeployNixOSModule model pageApp =
                     , "      perSystem ="
                     , "        { config, pkgs, lib, ... }:"
                     , "        {"
+                    , "          formatter = pkgs.nixfmt-tree;"
                     , "          forge." ++ pageApp.pageApp_app.app_outputName ++ " = {"
                     , "            # Put custom application configuration here ... "
                     , "            # services.components.<name>.process.environment.VARIABLE = \"value\";"
