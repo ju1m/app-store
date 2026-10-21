@@ -21,6 +21,12 @@
       }@args:
       let
         builder = config.build.${name};
+        base = [
+          "forge"
+          "pkgs"
+          "<name>"
+          "build"
+        ];
       in
       {
         options.build = lib.mkOption {
@@ -30,6 +36,7 @@
                 buildArgs:
                 forge-lib.mkAliasOptionModule {
                   condition = buildArgs.config.${name}.enable;
+                  inherit base;
                   from = [
                     name
                     "packages"
@@ -48,6 +55,7 @@
                 buildArgs:
                 forge-lib.mkAliasOptionModule {
                   condition = buildArgs.config.${name}.enable;
+                  inherit base;
                   from = [
                     name
                     "packages"
@@ -66,6 +74,7 @@
                 buildArgs:
                 forge-lib.mkAliasOptionModule {
                   condition = buildArgs.config.${name}.enable;
+                  inherit base;
                   from = [
                     name
                     "packages"

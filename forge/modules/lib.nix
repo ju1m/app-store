@@ -57,25 +57,40 @@
     mkAliasOptionModule =
       {
         condition,
+        base,
         from,
         to,
       }:
       { config, options, ... }:
-      lib.modules.doRename
+      lib.recursiveUpdate
+        (lib.modules.doRename
+          {
+            inherit from to;
+            visible = true;
+            warn = false;
+            use = lib.id;
+            # Note that `condition` wraps in `lib.mkIf` the generated `config`
+            # but is not available to set in `lib.modules.mkAliasOptionModule`
+            # hence use `lib.modules.doRename` directly to set it.
+            inherit condition;
+          }
+          {
+            inherit config;
+            # `lib.modules.doRename` does not expect the sub-`options` introduced by `lib.types.submodule`, hence remove them.
+            options = lib.setAttrByPath from (getOptionFromPath options from);
+          }
+        )
         {
-          inherit from to;
-          visible = true;
-          warn = false;
-          use = lib.id;
-          # Note that `condition` wraps in `lib.mkIf` the generated `config`
-          # but is not available to set in `lib.modules.mkAliasOptionModule`
-          # hence use `lib.modules.doRename` directly to set it.
-          inherit condition;
-        }
-        {
-          inherit config;
-          # `lib.modules.doRename` does not expect the sub-`options` introduced by `lib.types.submodule`, hence remove them.
-          options = lib.setAttrByPath from (getOptionFromPath options from);
+          # FixMe(performance): using a Markdown link reloads the page.
+          # An alternative could be to generate {options}`path.to.option` like in `lib.doRename`
+          # and extend the Markdown parser to handle it properly on the Elm side.
+          options = lib.setAttrByPath (from ++ [ "description" ]) ''
+            ${getOptionFromPath options (to ++ [ "description" ])}
+
+            Alias of: [`${lib.concatStringsSep "." (base ++ to)}`](recipe/options?s=${
+              lib.concatStringsSep "." (base ++ to)
+            })
+          '';
         };
 
     # Get the Nix store hash of a derivation's output path
